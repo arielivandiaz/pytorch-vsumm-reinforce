@@ -20,4 +20,4 @@ python visualize_results.py -p path_to/result.h5
 Plot
 We provide codes to plot the rewards obtained at each epoch. Use parse_log.py to plot the average rewards
 
-python parse_log.py -p path_to/log_train.txt	
+python parse_log.py -p path_to/log_train.txt
