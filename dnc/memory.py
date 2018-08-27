@@ -170,7 +170,7 @@ class Memory(nn.Module):
 
   def content_weightings(self, memory, keys, strengths):
     d = θ(memory, keys)
-    return σ(d * strengths.unsqueeze(2), 2)
+    return sigmaa(d * strengths.unsqueeze(2), 2)
 
   def directional_weightings(self, link_matrix, read_weights):
     rw = read_weights.unsqueeze(1)
@@ -204,57 +204,57 @@ class Memory(nn.Module):
     read_vectors = self.read_vectors(hidden['memory'], hidden['read_weights'])
     return read_vectors, hidden
 
-  def forward(self, ξ, hidden):
+  def forward(self, epsilonn, hidden):
 
-    # ξ = ξ.detach()
+    # epsilonn = epsilonn.detach()
     m = self.mem_size
     w = self.cell_size
     r = self.read_heads
-    b = ξ.size()[0]
+    b = epsilonn.size()[0]
 
     if self.independent_linears:
       # r read keys (b * r * w)
-      read_keys = F.tanh(self.read_keys_transform(ξ).view(b, r, w))
+      read_keys = F.tanh(self.read_keys_transform(epsilonn).view(b, r, w))
       # r read strengths (b * r)
-      read_strengths = F.softplus(self.read_strengths_transform(ξ).view(b, r))
+      read_strengths = F.softplus(self.read_strengths_transform(epsilonn).view(b, r))
       # write key (b * 1 * w)
-      write_key = F.tanh(self.write_key_transform(ξ).view(b, 1, w))
+      write_key = F.tanh(self.write_key_transform(epsilonn).view(b, 1, w))
       # write strength (b * 1)
-      write_strength = F.softplus(self.write_strength_transform(ξ).view(b, 1))
+      write_strength = F.softplus(self.write_strength_transform(epsilonn).view(b, 1))
       # erase vector (b * 1 * w)
-      erase_vector = F.sigmoid(self.erase_vector_transform(ξ).view(b, 1, w))
+      erase_vector = F.sigmoid(self.erase_vector_transform(epsilonn).view(b, 1, w))
       # write vector (b * 1 * w)
-      write_vector = F.tanh(self.write_vector_transform(ξ).view(b, 1, w))
+      write_vector = F.tanh(self.write_vector_transform(epsilonn).view(b, 1, w))
       # r free gates (b * r)
-      free_gates = F.sigmoid(self.free_gates_transform(ξ).view(b, r))
+      free_gates = F.sigmoid(self.free_gates_transform(epsilonn).view(b, r))
       # allocation gate (b * 1)
-      allocation_gate = F.sigmoid(self.allocation_gate_transform(ξ).view(b, 1))
+      allocation_gate = F.sigmoid(self.allocation_gate_transform(epsilonn).view(b, 1))
       # write gate (b * 1)
-      write_gate = F.sigmoid(self.write_gate_transform(ξ).view(b, 1))
+      write_gate = F.sigmoid(self.write_gate_transform(epsilonn).view(b, 1))
       # read modes (b * r * 3)
-      read_modes = σ(self.read_modes_transform(ξ).view(b, r, 3), 1)
+      read_modes = sigmaa(self.read_modes_transform(epsilonn).view(b, r, 3), 1)
     else:
-      ξ = self.interface_weights(ξ)
+      epsilonn = self.interface_weights(epsilonn)
       # r read keys (b * w * r)
-      read_keys = F.tanh(ξ[:, :r * w].contiguous().view(b, r, w))
+      read_keys = F.tanh(epsilonn[:, :r * w].contiguous().view(b, r, w))
       # r read strengths (b * r)
-      read_strengths = F.softplus(ξ[:, r * w:r * w + r].contiguous().view(b, r))
+      read_strengths = F.softplus(epsilonn[:, r * w:r * w + r].contiguous().view(b, r))
       # write key (b * w * 1)
-      write_key = F.tanh(ξ[:, r * w + r:r * w + r + w].contiguous().view(b, 1, w))
+      write_key = F.tanh(epsilonn[:, r * w + r:r * w + r + w].contiguous().view(b, 1, w))
       # write strength (b * 1)
-      write_strength = F.softplus(ξ[:, r * w + r + w].contiguous().view(b, 1))
+      write_strength = F.softplus(epsilonn[:, r * w + r + w].contiguous().view(b, 1))
       # erase vector (b * w)
-      erase_vector = F.sigmoid(ξ[:, r * w + r + w + 1: r * w + r + 2 * w + 1].contiguous().view(b, 1, w))
+      erase_vector = F.sigmoid(epsilonn[:, r * w + r + w + 1: r * w + r + 2 * w + 1].contiguous().view(b, 1, w))
       # write vector (b * w)
-      write_vector = F.tanh(ξ[:, r * w + r + 2 * w + 1: r * w + r + 3 * w + 1].contiguous().view(b, 1, w))
+      write_vector = F.tanh(epsilonn[:, r * w + r + 2 * w + 1: r * w + r + 3 * w + 1].contiguous().view(b, 1, w))
       # r free gates (b * r)
-      free_gates = F.sigmoid(ξ[:, r * w + r + 3 * w + 1: r * w + 2 * r + 3 * w + 1].contiguous().view(b, r))
+      free_gates = F.sigmoid(epsilonn[:, r * w + r + 3 * w + 1: r * w + 2 * r + 3 * w + 1].contiguous().view(b, r))
       # allocation gate (b * 1)
-      allocation_gate = F.sigmoid(ξ[:, r * w + 2 * r + 3 * w + 1].contiguous().unsqueeze(1).view(b, 1))
+      allocation_gate = F.sigmoid(epsilonn[:, r * w + 2 * r + 3 * w + 1].contiguous().unsqueeze(1).view(b, 1))
       # write gate (b * 1)
-      write_gate = F.sigmoid(ξ[:, r * w + 2 * r + 3 * w + 2].contiguous()).unsqueeze(1).view(b, 1)
+      write_gate = F.sigmoid(epsilonn[:, r * w + 2 * r + 3 * w + 2].contiguous()).unsqueeze(1).view(b, 1)
       # read modes (b * 3*r)
-      read_modes = σ(ξ[:, r * w + 2 * r + 3 * w + 3: r * w + 5 * r + 3 * w + 3].contiguous().view(b, r, 3), 1)
+      read_modes = sigmaa(epsilonn[:, r * w + 2 * r + 3 * w + 3: r * w + 5 * r + 3 * w + 3].contiguous().view(b, r, 3), 1)
 
     hidden = self.write(write_key, write_vector, erase_vector, free_gates,
                         read_strengths, write_strength, write_gate, allocation_gate, hidden)
