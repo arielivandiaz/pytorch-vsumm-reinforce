@@ -30,7 +30,7 @@ parser.add_argument('-m', '--metric', type=str, required=True, choices=['tvsum',
                     help="evaluation metric ['tvsum', 'summe']")
 # Model options
 parser.add_argument('--input-dim', type=int, default=1024, help="input dimension (default: 1024)")
-parser.add_argument('--hidden-dim', type=int, default=256, help="hidden unit dimension of DSN (default: 256)")
+parser.add_argument('--hidden-dim', type=int, default=512, help="hidden unit dimension of DSN (default: 256)")
 parser.add_argument('--num-layers', type=int, default=1, help="number of RNN layers (default: 1)")
 parser.add_argument('--rnn-cell', type=str, default='lstm', help="RNN cell type (default: lstm)")
 # Optimization options
