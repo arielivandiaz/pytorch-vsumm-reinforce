@@ -1,0 +1,23 @@
+
+# download datasets.tar.gz (173.5MB)
+wget http://www.eecs.qmul.ac.uk/~kz303/vsumm-reinforce/datasets.tar.gz
+tar -xvzf datasets.tar.gz
+
+Make splits
+python create_split.py -d datasets/eccv16_dataset_summe_google_pool5.h5 --save-dir datasets --save-name summe_splits  --num-splits 5
+As a result, the dataset is randomly split for 5 times, which are saved as json file.
+
+Train and test codes are written in main.py. To see the detailed arguments, please do python main.py -h.
+How to train
+python main.py -d datasets/eccv16_dataset_summe_google_pool5.h5 -s datasets/summe_splits.json -m summe --gpu 0 --save-dir log/summe-split0 --split-id 0 --verbose
+
+How to test
+python main.py -d datasets/eccv16_dataset_summe_google_pool5.h5 -s datasets/summe_splits.json -m summe --gpu 0 --save-dir log/summe-split0 --split-id 0 --evaluate --resume path_to_your_model.pth.tar --verbose --save-results
+
+If argument --save-results is enabled, output results will be saved to results.h5 under the same folder specified by --save-dir. To visualize the score-vs-gtscore, simple do
+python visualize_results.py -p path_to/result.h5
+
+Plot
+We provide codes to plot the rewards obtained at each epoch. Use parse_log.py to plot the average rewards
+
+python parse_log.py -p path_to/log_train.txt	
