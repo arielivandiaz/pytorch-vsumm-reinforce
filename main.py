@@ -17,7 +17,7 @@ from torch.distributions import Bernoulli
 
 from utils import Logger, read_json, write_json, save_checkpoint
 from models import *
-from dnc import *
+
 from rewards import compute_reward
 import vsum_tools
 
