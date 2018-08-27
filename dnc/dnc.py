@@ -186,14 +186,14 @@ class DNC(nn.Module):
       output = input
 
     # the interface vector
-    ξ = output
+    epsilonn = output
 
     # pass through memory
     if pass_through_memory:
       if self.share_memory:
-        read_vecs, mhx = self.memories[0](ξ, mhx)
+        read_vecs, mhx = self.memories[0](epsilonn, mhx)
       else:
-        read_vecs, mhx = self.memories[layer](ξ, mhx)
+        read_vecs, mhx = self.memories[layer](epsilonn, mhx)
       # the read vectors
       read_vectors = read_vecs.view(-1, self.w * self.r)
     else:
@@ -313,6 +313,3 @@ class DNC(nn.Module):
     s += ")\n" + super(DNC, self).__repr__() + \
       "\n----------------------------------------\n"
     return s.format(name=self.__class__.__name__, **self.__dict__)
-
-
-
