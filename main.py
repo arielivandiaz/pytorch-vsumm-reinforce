@@ -15,7 +15,7 @@ import torch.backends.cudnn as cudnn
 from torch.optim import lr_scheduler
 from torch.distributions import Bernoulli
 
-from utils import Logger, read_json, write_json, save_checkpoint
+from utils import Logger, read_json, write_json, save_checkpoint, set_args
 from models import *
 
 from rewards import compute_reward
