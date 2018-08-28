@@ -21,41 +21,14 @@ from models import *
 from rewards import compute_reward
 import vsum_tools
 
-parser = argparse.ArgumentParser("Pytorch code for unsupervised video summarization with REINFORCE")
-# Dataset options
-parser.add_argument('-d', '--dataset', type=str, required=True, help="path to h5 dataset (required)")
-parser.add_argument('-s', '--split', type=str, required=True, help="path to split file (required)")
-parser.add_argument('--split-id', type=int, default=0, help="split index (default: 0)")
-parser.add_argument('-m', '--metric', type=str, required=True, choices=['tvsum', 'summe'],
-                    help="evaluation metric ['tvsum', 'summe']")
-# Model options
-parser.add_argument('--input-dim', type=int, default=1024, help="input dimension (default: 1024)")
-parser.add_argument('--hidden-dim', type=int, default=256, help="hidden unit dimension of DSN (default: 256)")
-parser.add_argument('--num-layers', type=int, default=1, help="number of RNN layers (default: 1)")
-parser.add_argument('--rnn-cell', type=str, default='lstm', help="RNN cell type (default: lstm)")
-# Optimization options
-parser.add_argument('--lr', type=float, default=1e-05, help="learning rate (default: 1e-05)")
-parser.add_argument('--weight-decay', type=float, default=1e-05, help="weight decay rate (default: 1e-05)")
-parser.add_argument('--max-epoch', type=int, default=60, help="maximum epoch for training (default: 60)")
-parser.add_argument('--stepsize', type=int, default=30, help="how many steps to decay learning rate (default: 30)")
-parser.add_argument('--gamma', type=float, default=0.1, help="learning rate decay (default: 0.1)")
-parser.add_argument('--num-episode', type=int, default=5, help="number of episodes (default: 5)")
-parser.add_argument('--beta', type=float, default=0.01, help="weight for summary length penalty term (default: 0.01)")
-# Misc
-parser.add_argument('--seed', type=int, default=1, help="random seed (default: 1)")
-parser.add_argument('--gpu', type=str, default='0', help="which gpu devices to use")
-parser.add_argument('--use-cpu', action='store_true', help="use cpu device")
-parser.add_argument('--evaluate', action='store_true', help="whether to do evaluation only")
-parser.add_argument('--save-dir', type=str, default='log', help="path to save output (default: 'log/')")
-parser.add_argument('--resume', type=str, default='', help="path to resume file")
-parser.add_argument('--verbose', action='store_true', help="whether to show detailed test results")
-parser.add_argument('--save-results', action='store_true', help="whether to save output results")
 
-args = parser.parse_args()
+args = set_args()
 
 torch.manual_seed(args.seed)
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
 use_gpu = torch.cuda.is_available()
+
 if args.use_cpu: use_gpu = False
 
 def main():
