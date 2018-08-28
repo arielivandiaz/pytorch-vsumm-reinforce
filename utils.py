@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import os
+import argparse
 import sys
 import errno
 import shutil
@@ -89,7 +90,7 @@ def write_json(obj, fpath):
 
 
 def set_args():
-    
+
     parser = argparse.ArgumentParser("Pytorch code for unsupervised video summarization with REINFORCE")
     # Dataset options
     parser.add_argument('-d', '--dataset', type=str, required=True, help="path to h5 dataset (required)")

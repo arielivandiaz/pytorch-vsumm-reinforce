@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import os.path as osp
-import argparse
 import sys
 import h5py
 import time
