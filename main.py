@@ -30,7 +30,10 @@ use_gpu = torch.cuda.is_available()
 
 if args.use_cpu: use_gpu = False
 
+#python main.py -d datasets/eccv16_dataset_summe_google_pool5.h5 -s datasets/summe_splits.json -m summe --gpu 0 --save-dir log/summe-split0 --split-id 0 --verbose
+
 def main():
+
     if not args.evaluate:
         sys.stdout = Logger(osp.join(args.save_dir, 'log_train.txt'))
     else:
