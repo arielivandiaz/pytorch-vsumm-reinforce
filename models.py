@@ -10,7 +10,7 @@ class DSN(nn.Module):
         super(DSN, self).__init__()
         assert cell in ['lstm', 'gru'], "cell must be either 'lstm' or 'gru'"
         if cell == 'lstm':
-            self.rnn = nn.LSTM(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
+            self.rnn = nn.DNC(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
         else:
             self.rnn = nn.GRU(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
         self.fc = nn.Linear(hid_dim*2, 1)
