@@ -69,7 +69,7 @@ def θ(a, b, dimA=2, dimB=2, normBy=2):
   return x
 
 
-def sigmaa(input, axis=1):
+def σ(input, axis=1):
   """Softmax on an axis
 
   Softmax on an axis
