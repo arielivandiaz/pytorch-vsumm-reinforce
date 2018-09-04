@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from dnc import * 
+from dnc import *
 
 __all__ = ['DSN']
 
@@ -11,7 +11,31 @@ class DSN(nn.Module):
         super(DSN, self).__init__()
         assert cell in ['lstm', 'gru'], "cell must be either 'lstm' or 'gru'"
         if cell == 'lstm':
-            self.rnn = nn.DNC(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
+            #self.rnn = nn.LSTM(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
+            """
+            rnn = DNC(
+              input_size=64,
+              hidden_size=128,
+              rnn_type='lstm',
+              num_layers=4,
+              nr_cells=100,
+              cell_size=32,
+              read_heads=4,
+              batch_first=True,
+              gpu_id=0
+            )
+            """
+            self.rnn = DNC(input_size=in_dim,
+              hidden_size=hid_dim,
+              rnn_type='lstm',
+              num_layers=4,
+              nr_cells=100,
+              cell_size=32,
+              read_heads=4,
+              batch_first=True,
+              gpu_id=-1
+            )
+            #"""
         else:
             self.rnn = nn.GRU(in_dim, hid_dim, num_layers=num_layers, bidirectional=True, batch_first=True)
         self.fc = nn.Linear(hid_dim*2, 1)

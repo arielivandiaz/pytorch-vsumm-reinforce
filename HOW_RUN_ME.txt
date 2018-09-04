@@ -21,3 +21,5 @@ Plot
 We provide codes to plot the rewards obtained at each epoch. Use parse_log.py to plot the average rewards
 
 python parse_log.py -p path_to/log_train.txt
+
+End

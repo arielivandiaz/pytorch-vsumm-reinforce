@@ -18,9 +18,10 @@ def recursiveTrace(obj):
     print(obj.grad_fn)
     recursiveTrace(obj.grad_fn)
   elif hasattr(obj, 'saved_variables'):
+    print ("IN A PYTHON 3 CODE ")
     print(obj.requires_grad, len(obj.saved_tensors), len(obj.saved_variables))
-    [print(v) for v in obj.saved_variables]
-    [recursiveTrace(v.grad_fn) for v in obj.saved_variables]
+    #[print(v) for v in obj.saved_variables]
+    #[recursiveTrace(v.grad_fn) for v in obj.saved_variables]
 
 
 def cuda(x, grad=False, gpu_id=-1):
@@ -44,7 +45,7 @@ def cudalong(x, grad=False, gpu_id=-1):
     return var(T.from_numpy(x.astype(np.long)).pin_memory(), requires_grad=grad).cuda(gpu_id, async=True)
 
 
-def θ(a, b, dimA=2, dimB=2, normBy=2):
+def zeta(a, b, dimA=2, dimB=2, normBy=2):
   """Batchwise Cosine distance
 
   Cosine distance
@@ -60,16 +61,16 @@ def θ(a, b, dimA=2, dimB=2, normBy=2):
   Returns:
       Tensor -- Batchwise cosine distance (b * r * m)
   """
-  a_norm = T.norm(a, normBy, dimA, keepdim=True).expand_as(a) + δ
-  b_norm = T.norm(b, normBy, dimB, keepdim=True).expand_as(b) + δ
+  a_norm = T.norm(a, normBy, dimA, keepdim=True).expand_as(a) + delta
+  b_norm = T.norm(b, normBy, dimB, keepdim=True).expand_as(b) + delta
 
   x = T.bmm(a, b.transpose(1, 2)).transpose(1, 2) / (
-      T.bmm(a_norm, b_norm.transpose(1, 2)).transpose(1, 2) + δ)
+      T.bmm(a_norm, b_norm.transpose(1, 2)).transpose(1, 2) + delta)
   # apply_dict(locals())
   return x
 
 
-def σ(input, axis=1):
+def sigma(input, axis=1):
   """Softmax on an axis
 
   Softmax on an axis
@@ -96,7 +97,7 @@ def σ(input, axis=1):
   soft_max_nd = soft_max_2d.view(*trans_size)
   return soft_max_nd.transpose(axis, len(input_size) - 1)
 
-δ = 1e-6
+delta = 1e-6
 
 
 def register_nan_checks(model):
@@ -160,4 +161,5 @@ def ensure_gpu(tensor, gpu_id):
 
 def print_gradient(x, name):
   s = "Gradient of " + name + " ----------------------------------"
-  x.register_hook(lambda y: print(s, y.squeeze()))
+  print ("PRINT GRADIENT FUNCTION NO AVAILABLE")
+  #x.register_hook(lambda y: print(s, y.squeeze()))

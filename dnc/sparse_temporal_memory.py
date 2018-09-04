@@ -65,7 +65,7 @@ class SparseTemporalMemory(nn.Module):
       T.nn.init.orthogonal(self.interface_weights.weight)
 
     self.I = cuda(1 - T.eye(self.c).unsqueeze(0), gpu_id=self.gpu_id)  # (1 * n * n)
-    self.δ = 0.005  # minimum usage
+    self.delta = 0.005  # minimum usage
     self.timestep = 0
     self.mem_limit_reached = False
 
@@ -113,14 +113,14 @@ class SparseTemporalMemory(nn.Module):
     if hidden is None:
       hidden = {
           # warning can be a huge chunk of contiguous memory
-          'memory': cuda(T.zeros(b, m, w).fill_(δ), gpu_id=self.mem_gpu_id),
-          'visible_memory': cuda(T.zeros(b, c, w).fill_(δ), gpu_id=self.mem_gpu_id),
+          'memory': cuda(T.zeros(b, m, w).fill_(delta), gpu_id=self.mem_gpu_id),
+          'visible_memory': cuda(T.zeros(b, c, w).fill_(delta), gpu_id=self.mem_gpu_id),
           'link_matrix': cuda(T.zeros(b, m, self.KL * 2), gpu_id=self.gpu_id),
           'rev_link_matrix': cuda(T.zeros(b, m, self.KL * 2), gpu_id=self.gpu_id),
-          'precedence': cuda(T.zeros(b, self.KL * 2).fill_(δ), gpu_id=self.gpu_id),
-          'read_weights': cuda(T.zeros(b, m).fill_(δ), gpu_id=self.gpu_id),
-          'write_weights': cuda(T.zeros(b, m).fill_(δ), gpu_id=self.gpu_id),
-          'read_vectors': cuda(T.zeros(b, r, w).fill_(δ), gpu_id=self.gpu_id),
+          'precedence': cuda(T.zeros(b, self.KL * 2).fill_(delta), gpu_id=self.gpu_id),
+          'read_weights': cuda(T.zeros(b, m).fill_(delta), gpu_id=self.gpu_id),
+          'write_weights': cuda(T.zeros(b, m).fill_(delta), gpu_id=self.gpu_id),
+          'read_vectors': cuda(T.zeros(b, r, w).fill_(delta), gpu_id=self.gpu_id),
           'least_used_mem': cuda(T.zeros(b, 1).fill_(c + 1), gpu_id=self.gpu_id).long(),
           'usage': cuda(T.zeros(b, m), gpu_id=self.gpu_id),
           'read_positions': cuda(T.arange(0, c).expand(b, c), gpu_id=self.gpu_id).long()
@@ -141,14 +141,14 @@ class SparseTemporalMemory(nn.Module):
       hidden = self.rebuild_indexes(hidden, erase)
 
       if erase:
-        hidden['memory'].data.fill_(δ)
-        hidden['visible_memory'].data.fill_(δ)
+        hidden['memory'].data.fill_(delta)
+        hidden['visible_memory'].data.fill_(delta)
         hidden['link_matrix'].data.zero_()
         hidden['rev_link_matrix'].data.zero_()
         hidden['precedence'].data.zero_()
-        hidden['read_weights'].data.fill_(δ)
-        hidden['write_weights'].data.fill_(δ)
-        hidden['read_vectors'].data.fill_(δ)
+        hidden['read_weights'].data.fill_(delta)
+        hidden['write_weights'].data.fill_(delta)
+        hidden['read_vectors'].data.fill_(delta)
         hidden['least_used_mem'].data.fill_(c + 1 + self.timestep)
         hidden['usage'].data.fill_(0)
         hidden['read_positions'] = cuda(
@@ -257,7 +257,7 @@ class SparseTemporalMemory(nn.Module):
   def update_usage(self, read_positions, read_weights, write_weights, usage):
     (b, _) = read_positions.size()
     # usage is timesteps since a non-negligible memory access
-    u = (read_weights + write_weights > self.δ).float()
+    u = (read_weights + write_weights > self.delta).float()
 
     # usage before write
     relevant_usages = usage.gather(1, read_positions)
@@ -311,7 +311,7 @@ class SparseTemporalMemory(nn.Module):
 
     visible_memory = memory.gather(1, read_positions.unsqueeze(2).expand(b, self.c, w))
 
-    read_weights = σ(θ(visible_memory, keys), 2)
+    read_weights = sigma(zeta(visible_memory, keys), 2)
     read_vectors = T.bmm(read_weights, visible_memory)
     read_weights = T.prod(read_weights, 1)
 
@@ -342,35 +342,35 @@ class SparseTemporalMemory(nn.Module):
 
     return hidden['read_vectors'], hidden
 
-  def forward(self, ξ, hidden):
+  def forward(self, xi, hidden):
     t = time.time()
 
-    # ξ = ξ.detach()
+    # xi = xi.detach()
     m = self.mem_size
     w = self.cell_size
     r = self.read_heads
     c = self.c
-    b = ξ.size()[0]
+    b = xi.size()[0]
 
     if self.independent_linears:
       # r read keys (b * r * w)
-      read_query = self.read_query_transform(ξ).view(b, r, w)
+      read_query = self.read_query_transform(xi).view(b, r, w)
       # write key (b * 1 * w)
-      write_vector = self.write_vector_transform(ξ).view(b, 1, w)
+      write_vector = self.write_vector_transform(xi).view(b, 1, w)
       # write vector (b * 1 * r)
-      interpolation_gate = F.sigmoid(self.interpolation_gate_transform(ξ)).view(b, c)
+      interpolation_gate = F.sigmoid(self.interpolation_gate_transform(xi)).view(b, c)
       # write gate (b * 1)
-      write_gate = F.sigmoid(self.write_gate_transform(ξ).view(b, 1))
+      write_gate = F.sigmoid(self.write_gate_transform(xi).view(b, 1))
     else:
-      ξ = self.interface_weights(ξ)
+      xi = self.interface_weights(xi)
       # r read keys (b * r * w)
-      read_query = ξ[:, :r * w].contiguous().view(b, r, w)
+      read_query = xi[:, :r * w].contiguous().view(b, r, w)
       # write key (b * 1 * w)
-      write_vector = ξ[:, r * w: r * w + w].contiguous().view(b, 1, w)
+      write_vector = xi[:, r * w: r * w + w].contiguous().view(b, 1, w)
       # write vector (b * 1 * r)
-      interpolation_gate = F.sigmoid(ξ[:, r * w + w: r * w + w + c]).contiguous().view(b, c)
+      interpolation_gate = F.sigmoid(xi[:, r * w + w: r * w + w + c]).contiguous().view(b, c)
       # write gate (b * 1)
-      write_gate = F.sigmoid(ξ[:, -1].contiguous()).unsqueeze(1).view(b, 1)
+      write_gate = F.sigmoid(xi[:, -1].contiguous()).unsqueeze(1).view(b, 1)
 
     self.timestep += 1
     hidden = self.write(interpolation_gate, write_vector, write_gate, hidden)

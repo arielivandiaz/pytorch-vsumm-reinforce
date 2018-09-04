@@ -78,15 +78,15 @@ class Memory(nn.Module):
   def get_usage_vector(self, usage, free_gates, read_weights, write_weights):
     # write_weights = write_weights.detach()  # detach from the computation graph
     usage = usage + (1 - usage) * (1 - T.prod(1 - write_weights, 1))
-    ψ = T.prod(1 - free_gates.unsqueeze(2) * read_weights, 1)
-    return usage * ψ
+    psi = T.prod(1 - free_gates.unsqueeze(2) * read_weights, 1)
+    return usage * psi
 
   def allocate(self, usage, write_gate):
     # ensure values are not too small prior to cumprod.
-    usage = δ + (1 - δ) * usage
+    usage = delta + (1 - delta) * usage
     batch_size = usage.size(0)
     # free list
-    sorted_usage, φ = T.topk(usage, self.mem_size, dim=1, largest=False)
+    sorted_usage, fi = T.topk(usage, self.mem_size, dim=1, largest=False)
 
     # cumprod with exclusive=True
     # https://discuss.pytorch.org/t/cumprod-exclusive-true-equivalences/2614/8
@@ -97,8 +97,8 @@ class Memory(nn.Module):
     sorted_allocation_weights = (1 - sorted_usage) * prod_sorted_usage.squeeze()
 
     # construct the reverse sorting index https://stackoverflow.com/questions/2483696/undo-or-reverse-argsort-python
-    _, φ_rev = T.topk(φ, k=self.mem_size, dim=1, largest=False)
-    allocation_weights = sorted_allocation_weights.gather(1, φ_rev.long())
+    _, fi_rev = T.topk(fi, k=self.mem_size, dim=1, largest=False)
+    allocation_weights = sorted_allocation_weights.gather(1, fi_rev.long())
 
     return allocation_weights.unsqueeze(1), usage
 
@@ -169,8 +169,8 @@ class Memory(nn.Module):
     return hidden
 
   def content_weightings(self, memory, keys, strengths):
-    d = θ(memory, keys)
-    return σ(d * strengths.unsqueeze(2), 2)
+    d = zeta(memory, keys)
+    return sigma(d * strengths.unsqueeze(2), 2)
 
   def directional_weightings(self, link_matrix, read_weights):
     rw = read_weights.unsqueeze(1)
@@ -204,57 +204,57 @@ class Memory(nn.Module):
     read_vectors = self.read_vectors(hidden['memory'], hidden['read_weights'])
     return read_vectors, hidden
 
-  def forward(self, ξ, hidden):
+  def forward(self, xi, hidden):
 
-    # ξ = ξ.detach()
+    # xi = xi.detach()
     m = self.mem_size
     w = self.cell_size
     r = self.read_heads
-    b = ξ.size()[0]
+    b = xi.size()[0]
 
     if self.independent_linears:
       # r read keys (b * r * w)
-      read_keys = F.tanh(self.read_keys_transform(ξ).view(b, r, w))
+      read_keys = F.tanh(self.read_keys_transform(xi).view(b, r, w))
       # r read strengths (b * r)
-      read_strengths = F.softplus(self.read_strengths_transform(ξ).view(b, r))
+      read_strengths = F.softplus(self.read_strengths_transform(xi).view(b, r))
       # write key (b * 1 * w)
-      write_key = F.tanh(self.write_key_transform(ξ).view(b, 1, w))
+      write_key = F.tanh(self.write_key_transform(xi).view(b, 1, w))
       # write strength (b * 1)
-      write_strength = F.softplus(self.write_strength_transform(ξ).view(b, 1))
+      write_strength = F.softplus(self.write_strength_transform(xi).view(b, 1))
       # erase vector (b * 1 * w)
-      erase_vector = F.sigmoid(self.erase_vector_transform(ξ).view(b, 1, w))
+      erase_vector = F.sigmoid(self.erase_vector_transform(xi).view(b, 1, w))
       # write vector (b * 1 * w)
-      write_vector = F.tanh(self.write_vector_transform(ξ).view(b, 1, w))
+      write_vector = F.tanh(self.write_vector_transform(xi).view(b, 1, w))
       # r free gates (b * r)
-      free_gates = F.sigmoid(self.free_gates_transform(ξ).view(b, r))
+      free_gates = F.sigmoid(self.free_gates_transform(xi).view(b, r))
       # allocation gate (b * 1)
-      allocation_gate = F.sigmoid(self.allocation_gate_transform(ξ).view(b, 1))
+      allocation_gate = F.sigmoid(self.allocation_gate_transform(xi).view(b, 1))
       # write gate (b * 1)
-      write_gate = F.sigmoid(self.write_gate_transform(ξ).view(b, 1))
+      write_gate = F.sigmoid(self.write_gate_transform(xi).view(b, 1))
       # read modes (b * r * 3)
-      read_modes = σ(self.read_modes_transform(ξ).view(b, r, 3), 1)
+      read_modes = sigma(self.read_modes_transform(xi).view(b, r, 3), 1)
     else:
-      ξ = self.interface_weights(ξ)
+      xi = self.interface_weights(xi)
       # r read keys (b * w * r)
-      read_keys = F.tanh(ξ[:, :r * w].contiguous().view(b, r, w))
+      read_keys = F.tanh(xi[:, :r * w].contiguous().view(b, r, w))
       # r read strengths (b * r)
-      read_strengths = F.softplus(ξ[:, r * w:r * w + r].contiguous().view(b, r))
+      read_strengths = F.softplus(xi[:, r * w:r * w + r].contiguous().view(b, r))
       # write key (b * w * 1)
-      write_key = F.tanh(ξ[:, r * w + r:r * w + r + w].contiguous().view(b, 1, w))
+      write_key = F.tanh(xi[:, r * w + r:r * w + r + w].contiguous().view(b, 1, w))
       # write strength (b * 1)
-      write_strength = F.softplus(ξ[:, r * w + r + w].contiguous().view(b, 1))
+      write_strength = F.softplus(xi[:, r * w + r + w].contiguous().view(b, 1))
       # erase vector (b * w)
-      erase_vector = F.sigmoid(ξ[:, r * w + r + w + 1: r * w + r + 2 * w + 1].contiguous().view(b, 1, w))
+      erase_vector = F.sigmoid(xi[:, r * w + r + w + 1: r * w + r + 2 * w + 1].contiguous().view(b, 1, w))
       # write vector (b * w)
-      write_vector = F.tanh(ξ[:, r * w + r + 2 * w + 1: r * w + r + 3 * w + 1].contiguous().view(b, 1, w))
+      write_vector = F.tanh(xi[:, r * w + r + 2 * w + 1: r * w + r + 3 * w + 1].contiguous().view(b, 1, w))
       # r free gates (b * r)
-      free_gates = F.sigmoid(ξ[:, r * w + r + 3 * w + 1: r * w + 2 * r + 3 * w + 1].contiguous().view(b, r))
+      free_gates = F.sigmoid(xi[:, r * w + r + 3 * w + 1: r * w + 2 * r + 3 * w + 1].contiguous().view(b, r))
       # allocation gate (b * 1)
-      allocation_gate = F.sigmoid(ξ[:, r * w + 2 * r + 3 * w + 1].contiguous().unsqueeze(1).view(b, 1))
+      allocation_gate = F.sigmoid(xi[:, r * w + 2 * r + 3 * w + 1].contiguous().unsqueeze(1).view(b, 1))
       # write gate (b * 1)
-      write_gate = F.sigmoid(ξ[:, r * w + 2 * r + 3 * w + 2].contiguous()).unsqueeze(1).view(b, 1)
+      write_gate = F.sigmoid(xi[:, r * w + 2 * r + 3 * w + 2].contiguous()).unsqueeze(1).view(b, 1)
       # read modes (b * 3*r)
-      read_modes = σ(ξ[:, r * w + 2 * r + 3 * w + 3: r * w + 5 * r + 3 * w + 3].contiguous().view(b, r, 3), 1)
+      read_modes = sigma(xi[:, r * w + 2 * r + 3 * w + 3: r * w + 5 * r + 3 * w + 3].contiguous().view(b, r, 3), 1)
 
     hidden = self.write(write_key, write_vector, erase_vector, free_gates,
                         read_strengths, write_strength, write_gate, allocation_gate, hidden)

@@ -1,0 +1,6 @@
+ψ  = psi
+δ  = delta
+φ  = fi
+σ  = sigma
+θ  = zeta
+ξ  = xi
