@@ -7,7 +7,7 @@ __all__ = ['DSN']
 
 class DSN(nn.Module):
     """Deep Summarization Network"""
-    def __init__(self, in_dim=1024, hid_dim=256, num_layers=1, cell='lstm'):
+    def __init__(self, in_dim=2048, hid_dim=256, num_layers=1, cell='lstm'):
         super(DSN, self).__init__()
         assert cell in ['lstm', 'gru'], "cell must be either 'lstm' or 'gru'"
         if cell == 'lstm':
